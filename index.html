@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scientific Chatbot</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-slate-800 to-slate-900 text-white h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="text-center p-4 text-2xl font-semibold bg-slate-950 shadow-lg">
+    🔬 SciBot – Your Scientific Assistant
+  </header>
+
+  <!-- Chat Area -->
+  <main id="chat-container" class="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+    <!-- Messages will be dynamically inserted here -->
+  </main>
+
+  <!-- Input Area -->
+  <footer class="bg-slate-950 p-4">
+    <form id="chat-form" class="flex gap-2">
+      <input 
+        type="text" 
+        id="user-input" 
+        placeholder="Ask me anything scientific..." 
+        class="flex-1 p-3 rounded-xl bg-slate-800 text-white outline-none"
+        autocomplete="off"
+        required
+      />
+      <button type="submit" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-xl">
+        Send
+      </button>
+    </form>
+  </footer>
+
+  <script>
+    const chatForm = document.getElementById("chat-form");
+    const chatContainer = document.getElementById("chat-container");
+    const userInput = document.getElementById("user-input");
+
+    function appendMessage(sender, text) {
+      const msg = document.createElement("div");
+      msg.className = `p-3 rounded-xl max-w-xl ${sender === 'user' ? 'bg-blue-700 self-end ml-auto' : 'bg-slate-700 self-start mr-auto'}`;
+      msg.textContent = text;
+      chatContainer.appendChild(msg);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    chatForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const input = userInput.value.trim();
+      if (!input) return;
+
+      appendMessage("user", input);
+      userInput.value = "";
+
+      // Fake bot response – replace this with your backend API call
+      setTimeout(() => {
+        appendMessage("bot", "Here's a scientific fact: Water boils at 100°C at sea level!");
+      }, 500);
+    });
+  </script>
+
+</body>
+</html>

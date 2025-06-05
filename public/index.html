@@ -1,0 +1,76 @@
+<!-- public/index.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chatbot Científico</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="chat"></div>
+  <div id="input-area">
+    <input type="text" id="user-input" placeholder="Escribe tu pregunta científica..." />
+    <button id="send-button">Enviar</button>
+  </div>
+
+  <script>
+    const chat = document.getElementById('chat');
+    const input = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-button');
+
+    const SYSTEM_PROMPT = `
+      Eres un asistente científico especializado en física, química, biología y matemáticas. 
+      Responde preguntas de forma clara y precisa, utilizando lenguaje técnico cuando sea apropiado.
+      Si te preguntan sobre temas no científicos, responde amablemente que tu especialidad es el ámbito científico.
+    `;
+
+    let conversationHistory = [{ role: "system", content: SYSTEM_PROMPT }];
+
+    function addMessage(content, sender, isTyping = false) {
+      const message = document.createElement('div');
+      message.classList.add('message', sender);
+      message.innerHTML = isTyping
+        ? content + '<span class="typing-indicator"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></span>'
+        : content;
+      chat.appendChild(message);
+      chat.scrollTop = chat.scrollHeight;
+      return message;
+    }
+
+    async function sendMessage() {
+      const userInput = input.value.trim();
+      if (!userInput) return;
+      addMessage(userInput, 'user');
+      input.value = '';
+      const botMessage = addMessage('', 'bot', true);
+
+      conversationHistory.push({ role: 'user', content: userInput });
+
+      try {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: conversationHistory })
+        });
+
+        const data = await response.json();
+        const reply = data.choices?.[0]?.message?.content || 'Respuesta no válida.';
+        botMessage.innerHTML = reply;
+        conversationHistory.push({ role: 'assistant', content: reply });
+
+      } catch (error) {
+        botMessage.innerHTML = `Error: ${error.message}`;
+        console.error(error);
+      }
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+
+    addMessage("¡Hola! Soy tu asistente científico. ¿En qué puedo ayudarte hoy?", 'bot');
+  </script>
+</body>
+</html>

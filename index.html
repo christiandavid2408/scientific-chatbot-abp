@@ -1,67 +1,342 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Scientific Chatbot</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gradient-to-br from-slate-800 to-slate-900 text-white h-screen flex flex-col">
-
-  <!-- Header -->
-  <header class="text-center p-4 text-2xl font-semibold bg-slate-950 shadow-lg">
-    🔬 SciBot – Your Scientific Assistant
-  </header>
-
-  <!-- Chat Area -->
-  <main id="chat-container" class="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-    <!-- Messages will be dynamically inserted here -->
-  </main>
-
-  <!-- Input Area -->
-  <footer class="bg-slate-950 p-4">
-    <form id="chat-form" class="flex gap-2">
-      <input 
-        type="text" 
-        id="user-input" 
-        placeholder="Ask me anything scientific..." 
-        class="flex-1 p-3 rounded-xl bg-slate-800 text-white outline-none"
-        autocomplete="off"
-        required
-      />
-      <button type="submit" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-xl">
-        Send
-      </button>
-    </form>
-  </footer>
-
-  <script>
-    const chatForm = document.getElementById("chat-form");
-    const chatContainer = document.getElementById("chat-container");
-    const userInput = document.getElementById("user-input");
-
-    function appendMessage(sender, text) {
-      const msg = document.createElement("div");
-      msg.className = `p-3 rounded-xl max-w-xl ${sender === 'user' ? 'bg-blue-700 self-end ml-auto' : 'bg-slate-700 self-start mr-auto'}`;
-      msg.textContent = text;
-      chatContainer.appendChild(msg);
-      chatContainer.scrollTop = chatContainer.scrollHeight;
+  <title>Chatbot Científico</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #121212;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
     }
 
-    chatForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const input = userInput.value.trim();
-      if (!input) return;
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
 
-      appendMessage("user", input);
-      userInput.value = "";
+    .message {
+      max-width: 80%;
+      margin: 10px 0;
+      padding: 15px;
+      border-radius: 15px;
+      line-height: 1.6;
+    }
 
-      // Fake bot response – replace this with your backend API call
-      setTimeout(() => {
-        appendMessage("bot", "Here's a scientific fact: Water boils at 100°C at sea level!");
-      }, 500);
+    .user {
+      align-self: flex-end;
+      background: #1e88e5;
+    }
+
+    .bot {
+      align-self: flex-start;
+      background: #424242;
+    }
+
+    /* Estilos para el formato mejorado */
+    .bot-message-content {
+      font-size: 16px;
+    }
+    
+    .bot-message-content h3 {
+      color: #1e88e5;
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 18px;
+    }
+    
+    .bot-message-content h4 {
+      color: #bb86fc;
+      margin-top: 15px;
+      margin-bottom: 8px;
+      font-size: 16px;
+    }
+    
+    .bot-message-content ul, .bot-message-content ol {
+      padding-left: 20px;
+      margin: 10px 0;
+    }
+    
+    .bot-message-content li {
+      margin-bottom: 8px;
+    }
+    
+    .bot-message-content p {
+      margin: 10px 0;
+    }
+    
+    .bot-message-content strong {
+      color: #bb86fc;
+    }
+    
+    .bot-message-content em {
+      color: #cfd8dc;
+      font-style: italic;
+    }
+    
+    .bot-message-content .highlight {
+      background-color: #333;
+      padding: 2px 5px;
+      border-radius: 3px;
+    }
+
+    #input-area {
+      display: flex;
+      padding: 15px;
+      background: #1e1e1e;
+      border-top: 1px solid #333;
+    }
+
+    #user-input {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      background: #2d2d2d;
+      color: white;
+    }
+
+    #send-button {
+      padding: 12px 20px;
+      margin-left: 10px;
+      background: #1e88e5;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    #send-button:hover {
+      background: #1565c0;
+    }
+
+    .typing-indicator {
+      display: inline-block;
+      margin-left: 5px;
+    }
+    .typing-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #aaa;
+      margin: 0 2px;
+      animation: typingAnimation 1.4s infinite ease-in-out;
+    }
+    .typing-dot:nth-child(1) { animation-delay: 0s; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingAnimation {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-5px); }
+    }
+  </style>
+</head>
+<body>
+  <div id="chat"></div>
+
+  <div id="input-area">
+    <input type="text" id="user-input" placeholder="Escribe tu pregunta científica..." />
+    <button id="send-button">Enviar</button>
+  </div>
+
+  <script>
+    // Configuración de OpenRouter
+    const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+    const OPENROUTER_API_KEY = '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'; // Reemplaza con tu API key de OpenRouter
+    const SITE_URL = window.location.href; // URL de tu sitio
+    const SITE_NAME = 'Chatbot Científico'; // Nombre de tu aplicación
+    
+    // Prompt del sistema para definir el comportamiento del bot
+    const SYSTEM_PROMPT = `
+      Eres un asistente científico especializado en física, química, biología y matemáticas. 
+      Tus respuestas deben ser detalladas, bien estructuradas y usar formato Markdown para mejor presentación.
+      
+      Directrices de formato:
+      - Usa encabezados (##, ###) para secciones importantes
+      - Usa listas numeradas o con viñetas para secuencias o puntos clave
+      - Destaca términos importantes con **negritas**
+      - Usa cursivas para énfasis
+      - Incluye bloques de código para fórmulas o datos técnicos
+      - Separa los párrafos claramente
+      
+      Ejemplo de formato ideal:
+      
+      ## Concepto Científico
+      
+      **Definición**: Explicación clara del concepto.
+      
+      ### Historia
+      - Orígenes (año, científico)
+      - Desarrollo clave
+      - Estado actual
+      
+      ### Aplicaciones
+      1. Uso en campo X
+      2. Aplicación en tecnología Y
+      
+      **Importancia**: Por qué es relevante este concepto.
+      
+      Siempre mantén un tono profesional pero accesible, adaptándote al nivel del usuario.
+    `;
+
+    // Elementos del DOM
+    const chat = document.getElementById('chat');
+    const input = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-button');
+
+    // Historial de conversación
+    let conversationHistory = [
+      {
+        role: "system",
+        content: SYSTEM_PROMPT
+      }
+    ];
+
+    // Función para convertir markdown a HTML básico
+    function markdownToHtml(markdown) {
+      // Convertir encabezados
+      let html = markdown
+        .replace(/^### (.*$)/gm, '<h4>$1</h4>')
+        .replace(/^## (.*$)/gm, '<h3>$1</h3>')
+        // Convertir negritas
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        // Convertir cursivas
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        // Convertir listas no ordenadas
+        .replace(/^\s*-\s(.*$)/gm, '<li>$1</li>')
+        .replace(/^\s*\*\s(.*$)/gm, '<li>$1</li>')
+        // Convertir listas ordenadas
+        .replace(/^\s*\d+\.\s(.*$)/gm, '<li>$1</li>')
+        // Convertir bloques de código
+        .replace(/```([\s\S]*?)```/g, '<div class="highlight"><pre><code>$1</code></pre></div>')
+        // Convertir saltos de línea a párrafos
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n/g, '<br>');
+      
+      // Asegurar que las listas estén envueltas en <ul> o <ol>
+      html = html.replace(/<li>.*?<\/li>/g, function(match) {
+        if (match.match(/<li>\d+\./)) {
+          return '<ol>' + match + '</ol>';
+        } else {
+          return '<ul>' + match + '</ul>';
+        }
+      });
+      
+      return '<div class="bot-message-content"><p>' + html + '</p></div>';
+    }
+
+    // Función para añadir mensajes al chat
+    function addMessage(content, sender, isTyping = false) {
+      const message = document.createElement('div');
+      message.classList.add('message', sender);
+      
+      if (isTyping) {
+        message.innerHTML = content + '<span class="typing-indicator"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></span>';
+      } else {
+        if (sender === 'bot') {
+          message.innerHTML = markdownToHtml(content);
+        } else {
+          message.textContent = content;
+        }
+      }
+      
+      chat.appendChild(message);
+      chat.scrollTop = chat.scrollHeight;
+      return message;
+    }
+
+    // Función para enviar mensajes a la API
+    async function sendMessage() {
+      const userInput = input.value.trim();
+      if (!userInput) return;
+
+      // Añadir mensaje del usuario
+      addMessage(userInput, 'user');
+      input.value = '';
+      
+      // Añadir indicador de que el bot está escribiendo
+      const botMessage = addMessage("", 'bot', true);
+      
+      // Añadir mensaje al historial
+      conversationHistory.push({
+        role: "user",
+        content: userInput
+      });
+
+      try {
+        const response = await fetch(OPENROUTER_API_URL, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'HTTP-Referer': SITE_URL,
+            'X-Title': SITE_NAME,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            "model": "deepseek/deepseek-r1-0528:free",
+            "messages": conversationHistory,
+            "temperature": 0.7,
+            "max_tokens": 2000
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error?.message || 'Error en la API');
+        }
+
+        const data = await response.json();
+        const reply = data.choices[0]?.message?.content || 'No recibí una respuesta válida.';
+        
+        // Actualizar el mensaje del bot con formato
+        botMessage.innerHTML = markdownToHtml(reply);
+        
+        // Añadir respuesta al historial
+        conversationHistory.push({
+          role: "assistant",
+          content: reply
+        });
+
+      } catch (error) {
+        botMessage.innerHTML = `<div class="bot-message-content"><p>Error: ${error.message}</p></div>`;
+        console.error("Error en la solicitud:", error);
+      }
+    }
+
+    // Event listeners
+    sendBtn.addEventListener('click', sendMessage);
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendMessage();
     });
-  </script>
 
+    // Mensaje inicial con formato
+    addMessage(`¡Hola! Soy tu asistente científico. ¿En qué puedo ayudarte hoy?
+
+Puedes preguntarme sobre:
+- **Conceptos químicos** como la tabla periódica
+- **Teorías físicas** fundamentales
+- **Procesos biológicos** complejos
+- **Fórmulas matemáticas** y su aplicación
+
+Mis respuestas incluirán:
+## Explicaciones detalladas
+### Contexto histórico
+- Puntos clave
+- Aplicaciones prácticas
+
+**Ejemplo**: Pregunta "Explícame la teoría de la relatividad" para ver el formato de respuesta.`, 'bot');
+  </script>
 </body>
 </html>
